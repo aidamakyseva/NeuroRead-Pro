@@ -1253,14 +1253,42 @@ const analyticsManager = {
   async fetchFromSupabase() {
     if (supabaseClient) {
       try {
-        const { data } = await supabaseClient.from('neuro_sessions').select('*').order('id', { ascending: false }).limit(50);
+        const { data } = await supabaseClient
+          .from('neuro_sessions')
+          .select('*')
+          .order('id', { ascending: false })
+          .limit(100);
+
         if (data && data.length) {
           localStorage.setItem(this.LOG_KEY, JSON.stringify(data));
+
+          // Бұлттағы жазбалардан барлық бірегей қолданушыларды жинау
+          const localUsers = authManager.getUsers();
+          data.forEach(row => {
+            if (!row.user_email) return;
+            const existing = localUsers.find(u => u.email.toLowerCase() === row.user_email.toLowerCase());
+            if (!existing) {
+              localUsers.push({
+                name: row.user_name || 'Оқушы',
+                email: row.user_email,
+                avatar: row.avatar || '👩‍💻',
+                level: row.level || 1,
+                xp: row.xp || 0,
+                maxWpm: row.ers || row.wpm || 0,
+                authType: 'cloud'
+              });
+            } else {
+              if ((row.ers || 0) > (existing.maxWpm || 0)) existing.maxWpm = row.ers;
+              if ((row.xp || 0) > (existing.xp || 0)) existing.xp = row.xp;
+              if ((row.level || 1) > (existing.level || 1)) existing.level = row.level;
+            }
+          });
+          authManager.saveUsers(localUsers);
         }
       } catch (e) {}
     }
     this.renderAll();
-    showToast('Аналитика жаңартылды');
+    showToast('Барлық құрылғылардағы деректер жаңартылды!');
   },
 
   renderAll() {
