@@ -1387,31 +1387,73 @@ const analyticsManager = {
     `).join('');
   },
 
-  renderChart() {
+renderChart() {
     const svg = document.getElementById('progressSvgChart');
     if (!svg) return;
-    const hist = appState.currentUser?.ersHistory || [];
-    if (!hist.length) {
-      svg.innerHTML = '<text x="350" y="95" text-anchor="middle" fill="#64748b" font-size="12">График шығуы үшін WPM Диагностика тапсырыңыз</text>';
+
+    const u = appState.currentUser;
+    const logs = this.getLogs();
+    
+    let userErsLogs = logs
+      .filter(l => u && l.user_email && l.user_email.toLowerCase() === u.email.toLowerCase() && (l.ers > 0 || l.wpm > 0))
+      .map(l => ({ ers: l.ers || l.wpm, time: l.time || '' }))
+      .reverse();
+
+    if (!userErsLogs.length && u && u.ersHistory && u.ersHistory.length) {
+      userErsLogs = [...u.ersHistory];
+    }
+
+    if (!userErsLogs.length) {
+      svg.innerHTML = `
+        <line x1="40" y1="140" x2="660" y2="140" stroke="#1e293b" stroke-width="1" stroke-dasharray="4" />
+        <text x="350" y="85" text-anchor="middle" fill="#64748b" font-size="12" font-family="Inter">Нәтижелер динамикасы көріну үшін WPM Диагностикасын тапсырыңыз</text>
+      `;
       return;
     }
-    const pts = hist.slice(-8);
-    const maxVal = Math.max(400, ...pts.map(p => p.ers));
+
+    const pts = userErsLogs.slice(-8);
+    const maxVal = Math.max(500, ...pts.map(p => p.ers)) + 50;
+
+    if (pts.length === 1) {
+      const singleY = 140 - Math.round((pts[0].ers / maxVal) * 110);
+      svg.innerHTML = `
+        <line x1="40" y1="140" x2="660" y2="140" stroke="#1e293b" stroke-width="1" />
+        <line x1="40" y1="${singleY}" x2="660" y2="${singleY}" stroke="rgba(99, 102, 241, 0.2)" stroke-width="1" stroke-dasharray="4" />
+        <circle cx="350" cy="${singleY}" r="7" fill="#14b8a6" stroke="#ffffff" stroke-width="2" />
+        <text x="350" y="${singleY - 14}" text-anchor="middle" fill="#14b8a6" font-size="13" font-weight="bold" font-family="JetBrains Mono">${pts[0].ers} ERS</text>
+        <text x="350" y="160" text-anchor="middle" fill="#64748b" font-size="11" font-family="Inter">1-нәтиже (${pts[0].time || 'Бастапқы'}). График сызығы пайда болуы үшін тағы бір рет тест тапсырыңыз</text>
+      `;
+      return;
+    }
+
     const coords = pts.map((p, i) => {
-      const x = 60 + (i * (580 / Math.max(1, pts.length - 1)));
-      const y = 150 - Math.round((p.ers / maxVal) * 120);
-      return { x, y, val: p.ers };
+      const x = 50 + (i * (600 / (pts.length - 1)));
+      const y = 140 - Math.round((p.ers / maxVal) * 110);
+      return { x, y, val: p.ers, time: p.time };
     });
 
     const polyPoints = coords.map(c => `${c.x},${c.y}`).join(' ');
-    const circles = coords.map(c => `
-      <circle cx="${c.x}" cy="${c.y}" r="5" fill="#14b8a6" />
-      <text x="${c.x}" y="${c.y - 10}" text-anchor="middle" fill="#f8fafc" font-size="11" font-family="JetBrains Mono">${c.val}</text>
+    const areaPoints = `${coords[0].x},140 ${polyPoints} ${coords[coords.length - 1].x},140`;
+
+    const nodesHtml = coords.map(c => `
+      <g>
+        <circle cx="${c.x}" cy="${c.y}" r="5" fill="#14b8a6" stroke="#020617" stroke-width="2" />
+        <text x="${c.x}" y="${c.y - 10}" text-anchor="middle" fill="#f8fafc" font-size="11" font-weight="bold" font-family="JetBrains Mono">${c.val}</text>
+        <text x="${c.x}" y="156" text-anchor="middle" fill="#64748b" font-size="10" font-family="Inter">${c.time || ''}</text>
+      </g>
     `).join('');
 
     svg.innerHTML = `
-      <polyline fill="none" stroke="#6366f1" stroke-width="3" points="${polyPoints}" />
-      ${circles}
+      <defs>
+        <linearGradient id="chartGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#6366f1" stop-opacity="0.35" />
+          <stop offset="100%" stop-color="#6366f1" stop-opacity="0.0" />
+        </linearGradient>
+      </defs>
+      <line x1="30" y1="140" x2="670" y2="140" stroke="#1e293b" stroke-width="1.5" />
+      <polygon fill="url(#chartGrad)" points="${areaPoints}" />
+      <polyline fill="none" stroke="#6366f1" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" points="${polyPoints}" />
+      ${nodesHtml}
     `;
   },
 
