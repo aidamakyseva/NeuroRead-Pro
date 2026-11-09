@@ -1,0 +1,179 @@
+/* ==========================================================================
+   NeuroRead Pro — Cyberpunk Glassmorphism & Cross-Device Adaptive CSS
+   ========================================================================== */
+
+:root {
+  --brand-indigo: #6366f1;
+  --cyber-teal: #14b8a6;
+  --cyber-rose: #f43f5e;
+  --bg-deep: #020617;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-deep);
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(79, 70, 229, 0.14) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(20, 184, 166, 0.12) 0px, transparent 50%),
+    radial-gradient(at 50% 100%, rgba(244, 63, 94, 0.06) 0px, transparent 50%);
+  background-attachment: fixed;
+  color: #f8fafc;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* iOS Safari Input Auto-Zoom алдын алу */
+@media screen and (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* iPhone Safe Area Bottom (Төменгі панель үшін) */
+.safe-area-bottom {
+  padding-bottom: calc(0.375rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* Custom Range Sliders */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: #1e293b;
+  border-radius: 999px;
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--cyber-teal);
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 12px rgba(20, 184, 166, 0.8);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+/* ==========================================================================
+   RSVP SPRITZ OPTICAL ALIGNMENT (ORP FOCUS)
+   ========================================================================== */
+.spritz-container {
+  position: relative;
+  height: 170px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  user-select: none;
+}
+
+.spritz-guide-top,
+.spritz-guide-bottom {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 22px;
+  background-color: var(--cyber-rose);
+  box-shadow: 0 0 12px var(--cyber-rose);
+  z-index: 10;
+}
+
+.spritz-guide-top {
+  top: 0;
+}
+
+.spritz-guide-bottom {
+  bottom: 0;
+}
+
+.spritz-box {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: baseline;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 800;
+  line-height: 1.2;
+  padding: 0 12px;
+}
+
+.spritz-left {
+  text-align: right;
+  white-space: pre;
+  overflow: hidden;
+}
+
+.spritz-center {
+  color: var(--cyber-rose);
+  text-align: center;
+  text-shadow: 0 0 14px rgba(244, 63, 94, 0.55);
+}
+
+.spritz-right {
+  text-align: left;
+  white-space: pre;
+  overflow: hidden;
+}
+
+/* ==========================================================================
+   OPTICAL PACER LINES
+   ========================================================================== */
+.pacer-line {
+  padding: 8px 12px;
+  border-radius: 10px;
+  border-left: 4px solid transparent;
+  color: #64748b;
+  transition: all 0.2s ease;
+}
+
+.pacer-line-active {
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.22) 0%, rgba(20, 184, 166, 0.05) 100%);
+  border-left: 4px solid #14b8a6;
+  color: #ffffff !important;
+  font-weight: 600;
+  transform: translateX(4px);
+}
+
+/* ==========================================================================
+   SCHULTE CELLS ANIMATION
+   ========================================================================== */
+.schulte-cell {
+  user-select: none;
+  transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.schulte-cell:active {
+  transform: scale(0.92);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #020617;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #14b8a6;
+}

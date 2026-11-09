@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="kk" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#020617" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>NeuroRead Pro — Информатика және Когнитивті Жылдам Оқу Тренажері</title>
+  <link rel="icon" type="image/png" href="logo.png" />
+
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- FontAwesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          },
+          colors: {
+            brand: {
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca'
+            },
+            cyber: {
+              teal: '#14b8a6',
+              rose: '#f43f5e',
+              amber: '#f59e0b'
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body class="bg-slate-950 text-slate-100 font-sans antialiased selection:bg-brand-500 selection:text-white min-h-screen flex flex-col pb-20 lg:pb-6">
+
+  <!-- ===================================================================== -->
+  <!-- TOAST NOTIFICATION (ХАБАРЛАМА БАННЕРІ)                                -->
+  <!-- ===================================================================== -->
+  <div id="toastNotification" class="fixed top-4 right-4 z-[100] max-w-sm bg-slate-900/95 border border-slate-700/80 backdrop-blur-xl px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 transition-all duration-300 translate-x-32 opacity-0 pointer-events-none">
+    <div id="toastIcon" class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm shrink-0">✓</div>
+    <p id="toastMessage" class="text-xs font-semibold text-slate-100 leading-snug">Хабарлама мәтіні</p>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- AUTHENTICATION MODAL (КІРУ / ТІРКЕЛУ / GOOGLE / ҚОНАҚ)                -->
+  <!-- ===================================================================== -->
+  <div id="authModal" class="fixed inset-0 z-[90] bg-slate-950/90 backdrop-blur-2xl flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-slate-900/95 border border-slate-800 w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl shadow-brand-600/10 my-auto relative overflow-hidden">
+      
+      <!-- Top Glow Line -->
+      <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-brand-500 via-cyber-teal to-rose-500"></div>
+
+      <!-- Brand Header with logo.png -->
+      <div class="flex flex-col items-center text-center mb-6">
+        <div class="relative mb-3">
+          <img src="logo.png" alt="NeuroRead Pro Logo" class="w-16 h-16 rounded-2xl object-contain bg-slate-950 p-1.5 border border-slate-700/80 shadow-lg shadow-brand-500/20" onerror="this.outerHTML='<div class=\'w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-600 to-cyber-teal flex items-center justify-center text-2xl font-black text-white shadow-lg\'>NR</div>'" />
+          <span class="absolute -bottom-1 -right-1 px-1.5 py-0.5 rounded-md bg-cyber-teal text-slate-950 font-mono font-black text-[9px] uppercase">PRO</span>
+        </div>
+        <h1 class="text-xl sm:text-2xl font-black tracking-tight text-white">NeuroRead Pro</h1>
+        <p class="text-xs text-slate-400 mt-1" data-i18n="auth_subtitle">Информатика және когнитивті жылдам оқу тренажері</p>
+      </div>
+
+      <!-- Auth Tabs -->
+      <div class="flex bg-slate-950 p-1 rounded-2xl border border-slate-800 mb-4 text-xs font-bold">
+        <button type="button" id="tabBtnSignIn" onclick="authManager.switchTab('signin')" class="flex-1 py-2.5 rounded-xl bg-brand-600 text-white shadow-md transition">
+          <i class="fa-solid fa-right-to-bracket mr-1.5"></i><span data-i18n="auth_tab_login">Жүйеге кіру</span>
+        </button>
+        <button type="button" id="tabBtnSignUp" onclick="authManager.switchTab('signup')" class="flex-1 py-2.5 rounded-xl text-slate-400 hover:text-white transition">
+          <i class="fa-solid fa-user-plus mr-1.5"></i><span data-i18n="auth_tab_register">Тіркелу</span>
+        </button>
+      </div>
+
+      <!-- Auth Error Alert Box -->
+      <div id="authErrorBox" class="hidden mb-4 p-3 rounded-xl bg-rose-950/70 border border-rose-500/40 text-rose-300 text-xs font-medium flex items-center gap-2.5">
+        <i class="fa-solid fa-triangle-exclamation text-rose-400 shrink-0"></i>
+        <span id="authErrorText">Қате мәтіні</span>
+      </div>
+
+      <!-- SIGN IN FORM (ТЕК ТІРКЕЛГЕН ЛОГИН ЖӘНЕ ПАРОЛЬМЕН) -->
+      <form id="formSignIn" onsubmit="authManager.handleSignIn(event)" class="space-y-3.5">
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5" data-i18n="auth_label_email">Email немесе Логин</label>
+          <div class="relative">
+            <i class="fa-regular fa-envelope absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+            <input type="text" id="loginIdentifier" required placeholder="student@edu.kz" class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-brand-500 transition" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5" data-i18n="auth_label_password">Құпиясөз</label>
+          <div class="relative">
+            <i class="fa-solid fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+            <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-10 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-brand-500 transition" />
+            <button type="button" onclick="authManager.togglePassVisibility('loginPassword', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 text-xs">
+              <i class="fa-regular fa-eye"></i>
+            </button>
+          </div>
+        </div>
+        <button type="submit" class="w-full py-3 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-brand-600/25 transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-bolt"></i>
+          <span data-i18n="auth_btn_login">Кіру / Войти</span>
+        </button>
+      </form>
+
+      <!-- SIGN UP FORM (ЖАҢА АККАУНТ ТІРКЕУ) -->
+      <form id="formSignUp" onsubmit="authManager.handleSignUp(event)" class="space-y-3.5 hidden">
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5" data-i18n="auth_label_fullname">Толық аты-жөніңіз</label>
+          <div class="relative">
+            <i class="fa-regular fa-user absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+            <input type="text" id="regFullName" required placeholder="Асқаров Әлихан" class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-brand-500 transition" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5" data-i18n="auth_label_email">Email немесе Логин</label>
+          <div class="relative">
+            <i class="fa-regular fa-envelope absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+            <input type="text" id="regEmail" required placeholder="alihan@edu.kz" class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-brand-500 transition" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5" data-i18n="auth_label_password">Құпиясөз (кемінде 6 таңба)</label>
+          <div class="relative">
+            <i class="fa-solid fa-key absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+            <input type="password" id="regPassword" required minlength="6" placeholder="Кемінде 6 символ" class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-10 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-brand-500 transition" />
+            <button type="button" onclick="authManager.togglePassVisibility('regPassword', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 text-xs">
+              <i class="fa-regular fa-eye"></i>
+            </button>
+          </div>
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5" data-i18n="auth_label_avatar">Аватар таңдаңыз</label>
+          <div id="avatarSelector" class="grid grid-cols-6 gap-1.5"></div>
+        </div>
+        <button type="submit" class="w-full py-3 rounded-xl bg-gradient-to-r from-cyber-teal to-emerald-500 hover:opacity-95 text-slate-950 font-black text-xs shadow-lg shadow-cyber-teal/20 transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-check-double"></i>
+          <span data-i18n="auth_btn_register">Тіркелу және бастау</span>
+        </button>
+      </form>
+
+      <!-- Divider -->
+      <div class="flex items-center gap-3 my-4">
+        <div class="h-px bg-slate-800 flex-1"></div>
+        <span class="text-[10px] font-mono uppercase text-slate-500">немесе жедел кіру</span>
+        <div class="h-px bg-slate-800 flex-1"></div>
+      </div>
+
+      <!-- GOOGLE AUTH & GUEST LOGIN BUTTONS -->
+      <div class="space-y-2.5">
+        <button type="button" onclick="authManager.loginWithGoogle()" class="w-full py-2.5 px-4 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs transition flex items-center justify-center gap-2.5 shadow">
+          <svg class="w-4 h-4" viewBox="0 0 24 24">
+            <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.4 1 3.5 3.6 1.6 7.4l3.7 2.8C6.2 7.2 8.9 5 12 5z"/>
+            <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.6l3.7 2.9c2.2-2 3.7-5 3.7-8.7z"/>
+            <path fill="#FBBC05" d="M5.3 14.8c-.2-.8-.4-1.6-.4-2.5s.2-1.7.4-2.5L1.6 7C.6 9 0 11.2 0 13.5s.6 4.5 1.6 6.5l3.7-2.9z"/>
+            <path fill="#34A853" d="M12 24c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3.1 0-5.8-2.1-6.7-5l-3.7 2.8C3.5 21.4 7.4 24 12 24z"/>
+          </svg>
+          <span>Google аккаунтпен кіру</span>
+        </button>
+
+        <button type="button" onclick="authManager.loginAsGuest()" class="w-full py-2.5 px-4 rounded-xl bg-slate-950 hover:bg-slate-800/80 text-slate-300 hover:text-white font-semibold text-xs border border-slate-800 transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-user-astronaut text-cyber-teal"></i>
+          <span>Қонақ ретінде кіру (Гость / Demo)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- TOP NAVIGATION HEADER                                                 -->
+  <!-- ===================================================================== -->
+  <header class="sticky top-0 z-40 bg-slate-950/85 backdrop-blur-xl border-b border-slate-800/80">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-2">
+      
+      <!-- Left: Logo & Brand -->
+      <div class="flex items-center gap-2.5 cursor-pointer shrink-0" onclick="router.navigate('rsvp')">
+        <img src="logo.png" alt="Logo" class="w-10 h-10 rounded-xl object-contain bg-slate-900 p-1 border border-slate-700/70 shadow-sm" onerror="this.outerHTML='<div class=\'w-10 h-10 rounded-xl bg-gradient-to-br from-brand-600 to-cyber-teal flex items-center justify-center font-black text-white text-sm\'>NR</div>'" />
+        <div>
+          <div class="flex items-center gap-1.5">
+            <span class="font-black text-sm sm:text-base tracking-tight text-white">NeuroRead</span>
+            <span class="text-[10px] font-mono font-extrabold px-1.5 py-0.5 rounded bg-brand-500/20 text-brand-300 border border-brand-500/30">PRO</span>
+          </div>
+          <p class="text-[10px] text-slate-400 hidden sm:block leading-none mt-0.5">Cognitive IT Speed Reading</p>
+        </div>
+      </div>
+
+      <!-- Center: Desktop Module Navigation -->
+      <nav class="hidden lg:flex items-center gap-1 bg-slate-900/90 p-1 rounded-2xl border border-slate-800/90">
+        <button id="nav-rsvp" onclick="router.navigate('rsvp')" class="nav-link px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 text-white bg-brand-600 shadow-md">
+          <i class="fa-solid fa-bolt text-[11px]"></i><span data-i18n="nav_rsvp">RSVP Spritz</span>
+        </button>
+        <button id="nav-schulte" onclick="router.navigate('schulte')" class="nav-link px-3 py-1.5 rounded-xl text-xs font-medium flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-800/60">
+          <i class="fa-solid fa-table-cells text-[11px]"></i><span data-i18n="nav_schulte">Шульте кестесі</span>
+        </button>
+        <button id="nav-saccade" onclick="router.navigate('saccade')" class="nav-link px-3 py-1.5 rounded-xl text-xs font-medium flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-800/60">
+          <i class="fa-solid fa-eye text-[11px]"></i><span data-i18n="nav_saccade">Көру & Тахисто</span>
+        </button>
+        <button id="nav-pacer" onclick="router.navigate('pacer')" class="nav-link px-3 py-1.5 rounded-xl text-xs font-medium flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-800/60">
+          <i class="fa-solid fa-bars-staggered text-[11px]"></i><span data-i18n="nav_pacer">Метроном & Пейсер</span>
+        </button>
+        <button id="nav-diagnostic" onclick="router.navigate('diagnostic')" class="nav-link px-3 py-1.5 rounded-xl text-xs font-medium flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-800/60">
+          <i class="fa-solid fa-gauge-high text-[11px]"></i><span data-i18n="nav_test">WPM Диагностика</span>
+        </button>
+        <button id="nav-analytics" onclick="router.navigate('analytics')" class="nav-link px-3 py-1.5 rounded-xl text-xs font-medium flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-800/60">
+          <i class="fa-solid fa-chart-line text-[11px]"></i><span data-i18n="nav_visitors_hub">Аналитика</span>
+        </button>
+      </nav>
+
+      <!-- Right: Warmup Video Button, XP Bar, Sound, Lang, Profile -->
+      <div class="flex items-center gap-1.5 sm:gap-2.5">
+        
+        <!-- Neuro-Warmup Video Button -->
+        <button onclick="neuroWarmup.open()" class="px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyber-teal/20 to-brand-500/20 hover:from-cyber-teal/30 hover:to-brand-500/30 border border-cyber-teal/40 text-cyber-teal text-xs font-bold flex items-center gap-1.5 transition shadow-sm" title="Нейро-қыздырыну видеолары">
+          <i class="fa-solid fa-circle-play"></i>
+          <span class="hidden sm:inline">Нейро-видео</span>
+        </button>
+
+        <!-- XP & Level Pill (Desktop/Tablet) -->
+        <div class="hidden md:flex flex-col bg-slate-900 border border-slate-800 px-3 py-1 rounded-xl w-36">
+          <div class="flex items-center justify-between text-[10px] font-mono">
+            <span id="badgeUserLevel" class="font-black text-cyber-teal">L1</span>
+            <span id="headerRankLabel" class="text-slate-400 truncate max-w-[70px]">Junior</span>
+            <span id="userXpText" class="text-slate-300 font-bold">0/250</span>
+          </div>
+          <div class="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden mt-1">
+            <div id="userXpBar" class="h-full bg-gradient-to-r from-brand-500 to-cyber-teal transition-all duration-300" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- Sound Toggle -->
+        <button onclick="audioEngine.toggleMute()" class="w-9 h-9 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 flex items-center justify-center text-slate-300 hover:text-white transition" title="Дыбыс">
+          <i id="soundIconOn" class="fa-solid fa-volume-high text-xs"></i>
+          <i id="soundIconOff" class="fa-solid fa-volume-xmark text-xs text-rose-400 hidden"></i>
+        </button>
+
+        <!-- Language Selector -->
+        <select id="langSelect" onchange="i18n.setLanguage(this.value)" class="bg-slate-900 border border-slate-800 rounded-xl px-2 py-1.5 text-xs font-mono font-bold text-slate-200 focus:outline-none">
+          <option value="kz">KZ</option>
+          <option value="ru">RU</option>
+          <option value="en">EN</option>
+        </select>
+
+        <!-- User Profile Button -->
+        <button onclick="authManager.showAccountInfo()" class="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 pl-2 pr-2.5 py-1 rounded-xl transition">
+          <span id="headerUserAvatar" class="text-base">👩‍💻</span>
+          <div class="text-left hidden sm:block">
+            <div id="headerUserName" class="text-xs font-bold text-white leading-none truncate max-w-[95px]">Оқушы</div>
+            <div id="headerUserEmail" class="text-[10px] font-mono text-cyber-teal leading-none mt-1">L1 • 0 XP</div>
+          </div>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===================================================================== -->
+  <!-- MAIN WORKSPACE CONTAINER                                              -->
+  <!-- ===================================================================== -->
+  <main class="max-w-7xl w-full mx-auto px-3 sm:px-6 pt-5 flex-1">
+
+    <!-- =================================================================== -->
+    <!-- MODULE 1: RSVP SPRITZ SPEED READER                                  -->
+    <!-- =================================================================== -->
+    <section id="module-rsvp" class="app-module space-y-5">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        
+        <!-- Left 2 Columns: Spritz Optical Display -->
+        <div class="lg:col-span-2 bg-slate-900/85 border border-slate-800 rounded-3xl p-5 sm:p-7 backdrop-blur-md shadow-xl flex flex-col justify-between gap-5">
+          
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
+              <span class="text-xs font-mono uppercase tracking-wider text-slate-400">RSVP Optical Focus (ORP)</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span id="rsvpCurrentTopicBadge" class="text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-slate-300">Алгоритмдер теориясы</span>
+              <span id="spritzLiveWPM" class="text-xs font-mono font-black px-2.5 py-1 rounded-lg bg-brand-500/20 text-brand-300 border border-brand-500/30">350 WPM</span>
+            </div>
+          </div>
+
+          <!-- Spritz Reader Box -->
+          <div class="spritz-container bg-slate-950 border border-slate-800/90 rounded-2xl shadow-inner">
+            <div class="spritz-guide-top"></div>
+            <div class="spritz-guide-bottom"></div>
+            <div class="spritz-box text-2xl sm:text-4xl md:text-5xl">
+              <span id="spritzLeft" class="spritz-left text-slate-200">Бас</span>
+              <span id="spritzCenter" class="spritz-center">т</span>
+              <span id="spritzRight" class="spritz-right text-slate-200">ау</span>
+            </div>
+          </div>
+
+          <!-- Progress Timeline & Controls -->
+          <div class="space-y-4">
+            <div>
+              <div class="flex justify-between text-[11px] font-mono text-slate-400 mb-1.5">
+                <span id="spritzProgressWordCount">0 / 0 сөз (0%)</span>
+                <span>Қалған уақыт: <strong id="spritzEstTime" class="text-white">00:00</strong></span>
+              </div>
+              <div onclick="rsvpEngine.seekTimeline(event)" class="w-full h-2.5 bg-slate-950 border border-slate-800 rounded-full overflow-hidden cursor-pointer">
+                <div id="spritzProgressBar" class="h-full bg-gradient-to-r from-brand-500 to-cyber-teal transition-all duration-100" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <!-- Play / Skip Buttons -->
+            <div class="flex flex-wrap items-center gap-2.5">
+              <button onclick="rsvpEngine.skipWords(-10)" class="px-3.5 py-3 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-mono font-bold transition" title="10 сөз артқа">
+                <i class="fa-solid fa-backward-step"></i> -10
+              </button>
+              <button onclick="rsvpEngine.togglePlay()" class="flex-1 py-3.5 px-6 rounded-2xl bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-black text-xs sm:text-sm shadow-lg shadow-brand-600/25 transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-play"></i>
+                <span id="rsvpPlayBtnText" data-i18n="btn_start">Бастау (Бос орын)</span>
+              </button>
+              <button onclick="rsvpEngine.skipWords(10)" class="px-3.5 py-3 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-mono font-bold transition" title="10 сөз алға">
+                +10 <i class="fa-solid fa-forward-step"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: RSVP Settings & IT Text Presets -->
+        <div class="bg-slate-900/85 border border-slate-800 rounded-3xl p-5 sm:p-6 backdrop-blur-md shadow-xl flex flex-col justify-between gap-4">
+          <div class="space-y-4">
+            <h3 class="font-bold text-sm text-white flex items-center gap-2">
+              <i class="fa-solid fa-sliders text-brand-400"></i> RSVP Параметрлері
+            </h3>
+
+            <!-- WPM Slider -->
+            <div class="bg-slate-950 p-3.5 rounded-2xl border border-slate-800">
+              <div class="flex justify-between text-xs mb-2">
+                <span class="text-slate-400 font-medium" data-i18n="rsvp_speed_label">Оқу жылдамдығы:</span>
+                <span class="font-mono font-black text-cyber-teal"><span id="spritzWpmNum">350</span> WPM</span>
+              </div>
+              <input type="range" id="spritzWpmSlider" min="150" max="1000" step="25" value="350" oninput="rsvpEngine.setWPM(this.value)" class="w-full" />
+              <div class="flex justify-between text-[10px] font-mono text-slate-500 mt-1">
+                <span>150</span><span>400</span><span>700</span><span>1000</span>
+              </div>
+            </div>
+
+            <!-- Chunk Size -->
+            <div>
+              <label class="block text-xs text-slate-400 mb-1.5 font-medium" data-i18n="rsvp_chunk_label">Сөз үлесі (көлемі):</label>
+              <div class="grid grid-cols-3 gap-2">
+                <button id="chunkBtn1" onclick="rsvpEngine.setChunk(1)" class="py-2 rounded-xl text-xs font-bold bg-brand-600 text-white shadow">1 сөз</button>
+                <button id="chunkBtn2" onclick="rsvpEngine.setChunk(2)" class="py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700">2 сөз</button>
+                <button id="chunkBtn3" onclick="rsvpEngine.setChunk(3)" class="py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700">3 сөз</button>
+              </div>
+            </div>
+
+            <!-- Checkboxes -->
+            <div class="space-y-2 pt-1">
+              <label class="flex items-center justify-between text-xs text-slate-300 bg-slate-950 px-3.5 py-2.5 rounded-xl border border-slate-800 cursor-pointer">
+                <span data-i18n="rsvp_orp_toggle">Қызыл ORP фокусын бөлектеу</span>
+                <input type="checkbox" checked onchange="rsvpEngine.toggleORP(this.checked)" class="w-4 h-4 accent-brand-500 rounded" />
+              </label>
+              <label class="flex items-center justify-between text-xs text-slate-300 bg-slate-950 px-3.5 py-2.5 rounded-xl border border-slate-800 cursor-pointer">
+                <span data-i18n="rsvp_punct_toggle">Тыныс белгілерінде кідіру</span>
+                <input type="checkbox" checked onchange="rsvpEngine.togglePunctuation(this.checked)" class="w-4 h-4 accent-brand-500 rounded" />
+              </label>
+            </div>
+
+            <!-- IT Text Presets -->
+            <div>
+              <label class="block text-xs text-slate-400 mb-1.5 font-medium" data-i18n="rsvp_presets_label">💻 Информатика мәтіндер қоры:</label>
+              <select id="rsvpPresetDropdown" onchange="rsvpEngine.loadSelectedPreset(this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-brand-500">
+                <option value="algorithms">1. Алгоритмдер теориясы және Big O</option>
+                <option value="python">2. Python және ООП парадигмасы</option>
+                <option value="architecture">3. Компьютер архитектурасы (CPU/NPU)</option>
+                <option value="databases">4. Деректер қоры және SQL</option>
+                <option value="networks">5. Желілік хаттамалар (OSI, TCP/IP)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Custom Text & File Upload -->
+          <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800">
+            <button onclick="modals.open('customTextModal')" class="py-2.5 px-3 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-200 flex items-center justify-center gap-1.5 transition">
+              <i class="fa-solid fa-paste text-brand-400"></i>
+              <span data-i18n="btn_paste_text">Мәтін қою</span>
+            </button>
+            <label class="py-2.5 px-3 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-200 flex items-center justify-center gap-1.5 cursor-pointer transition">
+              <i class="fa-solid fa-file-arrow-up text-cyber-teal"></i>
+              <span data-i18n="btn_upload_file">Файл (.txt)</span>
+              <input type="file" accept=".txt" onchange="rsvpEngine.handleFileUpload(event)" class="hidden" />
+            </label>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- MODULE 2: SCHULTE MATRIX (ШУЛЬТЕ КЕСТЕСІ)                           -->
+    <!-- =================================================================== -->
+    <section id="module-schulte" class="app-module hidden space-y-5">
+      <div class="bg-slate-900/85 border border-slate-800 rounded-3xl p-5 sm:p-7 backdrop-blur-md shadow-xl">
+        
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+          <div>
+            <h2 class="text-lg sm:text-xl font-black text-white flex items-center gap-2">
+              <i class="fa-solid fa-table-cells text-brand-400"></i> Шульте Матрицасы (Перифериялық көру)
+            </h2>
+            <p class="text-xs text-slate-400 mt-0.5">Көзді кесте ортасына бағыттап, элементтерді ретімен табыңыз</p>
+          </div>
+
+          <!-- Size & Mode Selectors -->
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="bg-slate-950 p-1 rounded-2xl border border-slate-800 flex text-xs font-bold">
+              <button id="schulteSize3" onclick="schulteEngine.setSize(3)" class="px-3 py-1.5 rounded-xl text-slate-300">3×3</button>
+              <button id="schulteSize4" onclick="schulteEngine.setSize(4)" class="px-3 py-1.5 rounded-xl text-slate-300">4×4</button>
+              <button id="schulteSize5" onclick="schulteEngine.setSize(5)" class="px-3 py-1.5 rounded-xl bg-brand-600 text-white shadow-md">5×5</button>
+              <button id="schulteSize6" onclick="schulteEngine.setSize(6)" class="px-3 py-1.5 rounded-xl text-slate-300">6×6</button>
+            </div>
+
+            <div class="bg-slate-950 p-1 rounded-2xl border border-slate-800 flex text-xs font-semibold">
+              <button id="schulteModeClassic" onclick="schulteEngine.setMode('classic')" class="px-3 py-1.5 rounded-xl bg-slate-700 text-white">Классика</button>
+              <button id="schulteModeGorbov" onclick="schulteEngine.setMode('gorbov')" class="px-3 py-1.5 rounded-xl text-slate-300 hover:text-white">Горбов (Қызыл-Қара)</button>
+              <button id="schulteModeLetters" onclick="schulteEngine.setMode('letters')" class="px-3 py-1.5 rounded-xl text-slate-300 hover:text-white">Код символдары</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Status Bar -->
+        <div class="grid grid-cols-3 gap-3 max-w-lg mx-auto mb-6">
+          <div class="bg-slate-950 border border-slate-800 p-3 rounded-2xl text-center">
+            <span class="text-[10px] uppercase text-slate-400 font-bold block" data-i18n="schulte_target_label">Ізделетін элемент:</span>
+            <div class="flex items-center justify-center gap-1.5 mt-1">
+              <span id="schulteTargetColorTag" class="hidden"></span>
+              <span id="schulteTargetVal" class="text-xl sm:text-2xl font-mono font-black text-cyber-teal">1</span>
+            </div>
+          </div>
+          <div class="bg-slate-950 border border-slate-800 p-3 rounded-2xl text-center">
+            <span class="text-[10px] uppercase text-slate-400 font-bold block" data-i18n="schulte_time_label">Уақыт:</span>
+            <span id="schulteLiveTimer" class="text-xl sm:text-2xl font-mono font-black text-white mt-1 block">00.00</span>
+          </div>
+          <div class="bg-slate-950 border border-slate-800 p-3 rounded-2xl text-center">
+            <span class="text-[10px] uppercase text-slate-400 font-bold block" data-i18n="schulte_errors_label">Қателер:</span>
+            <span id="schulteMistakeCount" class="text-xl sm:text-2xl font-mono font-black text-rose-400 mt-1 block">0</span>
+          </div>
+        </div>
+
+        <!-- Schulte Grid -->
+        <div id="schulteGridContainer" class="grid gap-2 sm:gap-3 max-w-md mx-auto aspect-square mb-6"></div>
+
+        <div class="text-center">
+          <button onclick="schulteEngine.startNewGame()" class="px-6 py-3 rounded-2xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs shadow-lg transition inline-flex items-center gap-2">
+            <i class="fa-solid fa-rotate"></i>
+            <span data-i18n="btn_restart">Жаңа кесте құру</span>
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- MODULE 3: SACCADE PYRAMID & IT-TACHISTOSCOPE                        -->
+    <!-- =================================================================== -->
+    <section id="module-saccade" class="app-module hidden space-y-5">
+      <div class="bg-slate-900/85 border border-slate-800 rounded-3xl p-5 sm:p-7 backdrop-blur-md shadow-xl">
+        
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+          <div>
+            <h2 class="text-lg sm:text-xl font-black text-white">👁️ Саккадалық Пирамида & IT-Тахистоскоп</h2>
+            <p class="text-xs text-slate-400">Көру аймағын кеңейту және информатика терминдерін миллисекундта тану</p>
+          </div>
+          <div class="bg-slate-950 p-1 rounded-2xl border border-slate-800 flex gap-1">
+            <button id="subtab-pyramid" onclick="saccadeEngine.setSubTab('pyramid')" class="px-4 py-2 rounded-xl text-xs font-bold bg-brand-600 text-white shadow-md">Пирамида</button>
+            <button id="subtab-tachisto" onclick="saccadeEngine.setSubTab('tachisto')" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-300 hover:text-white">Тахистоскоп</button>
+          </div>
+        </div>
+
+        <!-- Subview 1: Pyramid -->
+        <div id="saccadePyramidView" class="space-y-5">
+          <p class="text-xs text-center text-slate-300 max-w-xl mx-auto" data-i18n="pyramid_desc">
+            Көзді дәл ортадағы қызыл нүктелерде ұстап, шеткі IT аббревиатуралар мен сандарды перифериялық көру арқылы оқыңыз.
+          </p>
+          <div id="pyramidListContainer" class="flex flex-col items-center space-y-3 font-mono font-bold text-sm sm:text-lg max-w-xl mx-auto bg-slate-950 p-6 rounded-2xl border border-slate-800"></div>
+          <div class="text-center">
+            <button onclick="saccadeEngine.generatePyramid()" class="px-6 py-3 rounded-2xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs shadow-lg transition">
+              🔄 <span data-i18n="btn_next_level">Жаңа пирамида құру</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Subview 2: Tachistoscope -->
+        <div id="saccadeTachistoView" class="hidden space-y-5 max-w-xl mx-auto text-center">
+          <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 flex items-center justify-between">
+            <span class="text-xs text-slate-400 font-medium">Жарқ ету ұзақтығы:</span>
+            <input type="range" min="50" max="400" step="10" value="120" oninput="saccadeEngine.setFlashDuration(this.value)" class="w-40" />
+            <span id="tachistoDurationLabel" class="text-xs font-mono font-bold text-cyber-teal">120 мс</span>
+          </div>
+
+          <div id="tachistoFlashBox" class="h-36 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-center text-2xl sm:text-4xl font-mono font-black text-white shadow-inner">
+            <span class="text-slate-500 text-base font-sans" data-i18n="tachisto_ready">Жарқ еткізуге дайынсыз ба?</span>
+          </div>
+
+          <div id="tachistoAnswerGroup" class="hidden flex gap-2">
+            <input type="text" id="tachistoUserInput" onkeydown="if(event.key==='Enter') saccadeEngine.verifyTachisto()" placeholder="Көрген терминді жазыңыз..." class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-brand-500" />
+            <button onclick="saccadeEngine.verifyTachisto()" class="px-6 py-3 rounded-xl bg-cyber-teal text-slate-950 font-black text-xs">Тексеру ✓</button>
+          </div>
+
+          <button onclick="saccadeEngine.triggerFlash()" class="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-brand-600 to-indigo-600 text-white font-black text-xs shadow-lg transition">
+            ⚡ Терминді жарқ еткізу (Flash)
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- MODULE 4: OPTICAL PACER & AUDIO METRONOME                           -->
+    <!-- =================================================================== -->
+    <section id="module-pacer" class="app-module hidden space-y-5">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        
+        <div class="lg:col-span-2 bg-slate-900/85 border border-slate-800 rounded-3xl p-5 sm:p-7 backdrop-blur-md shadow-xl flex flex-col gap-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 class="text-lg font-black text-white">📖 Оптикалық Пейсер</h2>
+              <p class="text-xs text-slate-400">Көздің кері қайтуын (регрессияны) болдырмайтын жолдық тренажер</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span id="pacerEstWpmBadge" class="px-2.5 py-1 rounded-lg bg-cyber-teal/15 text-cyber-teal font-mono text-xs font-bold">~330 WPM</span>
+              <span id="pacerLineProgress" class="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 font-mono text-xs text-slate-300">0 / 0</span>
+            </div>
+          </div>
+
+          <div class="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden">
+            <div id="pacerProgressBar" class="h-full bg-cyber-teal transition-all duration-200" style="width: 0%"></div>
+          </div>
+
+          <div id="pacerTextBody" class="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-2 max-h-80 overflow-y-auto text-sm leading-relaxed"></div>
+
+          <div class="flex gap-2.5">
+            <button id="pacerToggleBtn" onclick="pacerEngine.togglePacer()" class="flex-1 py-3 rounded-2xl bg-gradient-to-r from-brand-600 to-indigo-600 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg transition">
+              <span id="pacerBtnText">▶️ Пейсерді іске қосу (Бос орын)</span>
+            </button>
+            <button onclick="pacerEngine.resetPacer()" class="px-4 py-3 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-bold">
+              🔄 Басынан
+            </button>
+          </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="bg-slate-900/85 border border-slate-800 rounded-3xl p-5 sm:p-6 backdrop-blur-md shadow-xl space-y-5">
+          <div>
+            <label class="block text-xs text-slate-400 mb-1.5 font-medium">Мәтін тақырыбы:</label>
+            <select onchange="pacerEngine.changeTopic(this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white">
+              <option value="algorithms">1. Алгоритмдер теориясы</option>
+              <option value="python">2. Python және ООП</option>
+              <option value="architecture">3. Компьютер архитектурасы</option>
+              <option value="databases">4. Деректер қоры және SQL</option>
+              <option value="networks">5. Компьютерлік желілер</option>
+            </select>
+          </div>
+
+          <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800">
+            <div class="flex justify-between text-xs mb-2">
+              <span class="text-slate-400" data-i18n="pacer_speed_label">Пейсер жылдамдығы:</span>
+              <span class="font-mono font-bold text-white"><span id="pacerLpmValue">30</span> жол/мин</span>
+            </div>
+            <input type="range" min="10" max="80" step="5" value="30" oninput="pacerEngine.setLPM(this.value)" class="w-full" />
+          </div>
+
+          <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-white" data-i18n="metronome_bpm_label">Аудио-Метроном:</span>
+              <div class="flex items-center gap-2">
+                <div id="metroVisualPulse" class="w-3 h-3 rounded-full bg-slate-700"></div>
+                <span class="font-mono text-xs font-bold text-cyber-teal"><span id="metroBpmValue">110</span> BPM</span>
+              </div>
+            </div>
+            <p class="text-[11px] text-slate-400" data-i18n="metronome_desc">Ырғақты дыбыс іштей қайталауды тоқтатып, визуалды оқуды қосады</p>
+            <input type="range" min="60" max="200" step="5" value="110" oninput="pacerEngine.setBPM(this.value)" class="w-full" />
+            <button id="metroToggleBtn" onclick="pacerEngine.toggleMetronome()" class="w-full py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center justify-center gap-2 border border-slate-700 transition">
+              <i class="fa-solid fa-drum"></i>
+              <span id="metroBtnText">Метрономды қосу</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- MODULE 5: WPM & ERS DIAGNOSTICS (5 ДЕҢГЕЙЛІК ТЕСТ)                  -->
+    <!-- =================================================================== -->
+    <section id="module-diagnostic" class="app-module hidden space-y-5">
+      <div class="bg-slate-900/85 border border-slate-800 rounded-3xl p-5 sm:p-7 backdrop-blur-md shadow-xl space-y-5">
+        
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
+          <div>
+            <h2 class="text-lg sm:text-xl font-black text-white">🎯 WPM & ERS Информатика Диагностикасы</h2>
+            <p class="text-xs text-slate-400" data-i18n="diag_step1_subtitle">Мәтінді мұқият оқып, 10 сұраққа жауап беріңіз (Түсіну 50%-дан төмен болса — 0 XP)</p>
+          </div>
+          <div class="grid grid-cols-5 gap-1 bg-slate-950 p-1 rounded-2xl border border-slate-800 text-xs font-bold">
+            <button id="diagTabTopic1" onclick="diagnosticEngine.setTopic('topic1')" class="py-2 px-2.5 rounded-xl bg-brand-600 text-white shadow transition">1-деңгей</button>
+            <button id="diagTabTopic2" onclick="diagnosticEngine.setTopic('topic2')" class="py-2 px-2.5 rounded-xl text-slate-400 hover:text-white transition">2-деңгей</button>
+            <button id="diagTabTopic3" onclick="diagnosticEngine.setTopic('topic3')" class="py-2 px-2.5 rounded-xl text-slate-400 hover:text-white transition">3-деңгей</button>
+            <button id="diagTabTopic4" onclick="diagnosticEngine.setTopic('topic4')" class="py-2 px-2.5 rounded-xl text-slate-400 hover:text-white transition">4-деңгей</button>
+            <button id="diagTabTopic5" onclick="diagnosticEngine.setTopic('topic5')" class="py-2 px-2.5 rounded-xl text-slate-400 hover:text-white transition">5-деңгей</button>
+          </div>
+        </div>
+
+        <!-- Step 1: Reading Passage -->
+        <div id="diagStepReading" class="space-y-5">
+          <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-950 px-4 py-3 rounded-2xl border border-slate-800">
+            <h3 id="diagCurrentHeading" class="font-bold text-sm text-cyber-teal">1-деңгей: Алгоритм</h3>
+            <div class="flex items-center gap-3 font-mono text-xs">
+              <span id="diagWordCountLabel" class="text-slate-400">150 сөз</span>
+              <span class="px-2.5 py-1 rounded-lg bg-brand-500/20 text-brand-300 font-bold">⏱ <span id="diagLiveTimer">00:00</span></span>
+            </div>
+          </div>
+
+          <div id="diagPassageContainer" class="bg-slate-950 border border-slate-800 rounded-2xl p-5 sm:p-7 text-sm sm:text-base text-slate-200 space-y-4 leading-relaxed"></div>
+
+          <button onclick="diagnosticEngine.finishReading()" class="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-cyber-teal text-slate-950 font-black text-xs sm:text-sm shadow-lg transition" data-i18n="btn_diag_finish_reading">
+            ✅ Мәтінді толық оқып біттім — 10 сұрақтық тестке өту
+          </button>
+        </div>
+
+        <!-- Step 2: 10-Question Quiz -->
+        <div id="diagStepQuiz" class="hidden space-y-5">
+          <div id="diagQuizList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+          <button onclick="diagnosticEngine.evaluateAnswers()" class="w-full py-4 rounded-2xl bg-gradient-to-r from-brand-600 to-indigo-600 text-white font-black text-xs sm:text-sm shadow-lg transition" data-i18n="btn_diag_calculate">
+            🚀 Нәтижені тексеру және ERS есептеу
+          </button>
+        </div>
+
+        <!-- Step 3: Results -->
+        <div id="diagStepResults" class="hidden space-y-5">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="bg-slate-950 border border-slate-800 p-5 rounded-2xl text-center">
+              <span class="text-xs text-slate-400 uppercase font-bold">Таза жылдамдық (WPM)</span>
+              <div id="diagResRawWpm" class="text-3xl font-mono font-black text-white mt-1">0</div>
+            </div>
+            <div class="bg-slate-950 border border-slate-800 p-5 rounded-2xl text-center">
+              <span class="text-xs text-slate-400 uppercase font-bold">Мәтінді түсіну сапасы</span>
+              <div id="diagResComp" class="text-3xl font-mono font-black text-amber-400 mt-1">0%</div>
+              <span id="diagResScoreDetails" class="text-[11px] font-mono text-slate-400">0 / 10 дұрыс</span>
+            </div>
+            <div class="bg-slate-950 border border-cyber-teal/50 p-5 rounded-2xl text-center shadow-lg shadow-cyber-teal/10">
+              <span class="text-xs text-cyber-teal uppercase font-bold">Тиімді жылдамдық (ERS)</span>
+              <div id="diagResERS" class="text-3xl font-mono font-black text-cyber-teal mt-1">0</div>
+              <span id="diagEarnedXpBadge" class="text-[11px] font-mono text-emerald-400">+0 XP</span>
+            </div>
+          </div>
+
+          <div id="diagRecommendation" class="p-4 rounded-2xl bg-slate-950 border border-slate-800 text-xs sm:text-sm text-slate-200 font-medium"></div>
+
+          <div id="diagAnswerReviewList" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+
+          <button onclick="diagnosticEngine.restart()" class="w-full py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs transition" data-i18n="btn_diag_again">
+            🔄 Басқа деңгейді таңдау / Қайта тапсыру
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- MODULE 6: REAL-TIME SUPABASE ANALYTICS & LEADERBOARD                -->
+    <!-- =================================================================== -->
+    <section id="module-analytics" class="app-module hidden space-y-6">
+      
+      <!-- Top 4 Stat Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="relative bg-slate-900/80 border border-slate-800 p-5 rounded-3xl backdrop-blur-md shadow-lg">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400" data-i18n="stat_visitors_total">Нақты сессиялар</span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> SUPABASE LIVE
+            </span>
+          </div>
+          <div class="text-3xl font-black font-mono text-white" id="statVisitorCount">0</div>
+          <div class="text-[11px] text-slate-400 mt-1" id="statActiveSessions">Барлық жазба саны: 0</div>
+        </div>
+
+        <div class="relative bg-slate-900/80 border border-slate-800 p-5 rounded-3xl backdrop-blur-md shadow-lg">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400" data-i18n="stat_registered_users">Бірегей қолданушылар</span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-brand-500/15 text-brand-300 border border-brand-500/30">🎓 USERS</span>
+          </div>
+          <div class="text-3xl font-black font-mono text-white" id="statAccountsTotal">0</div>
+          <div class="text-[11px] text-slate-400 mt-1">Тіркелген және кіргендер</div>
+        </div>
+
+        <div class="relative bg-slate-900/80 border border-slate-800 p-5 rounded-3xl backdrop-blur-md shadow-lg">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Орташа нақты ERS</span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">⚡ AVG ERS</span>
+          </div>
+          <div class="text-3xl font-black font-mono text-cyber-teal" id="statPlatformAvgWpm">0 <span class="text-xs font-normal text-slate-400">ERS</span></div>
+          <div class="text-[11px] text-slate-400 mt-1">Тапсырылған тесттер бойынша</div>
+        </div>
+
+        <div class="relative bg-slate-900/80 border border-slate-800 p-5 rounded-3xl backdrop-blur-md shadow-lg">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Оқылған сөздеріңіз</span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-rose-500/15 text-rose-400 border border-rose-500/30">📚 MY WORDS</span>
+          </div>
+          <div class="text-3xl font-black font-mono text-white" id="statGlobalWords">0</div>
+          <div class="text-[11px] text-slate-400 mt-1">Тек нақты оқылған мәтіндер</div>
+        </div>
+      </div>
+
+      <!-- TOP-3 LEADERBOARD PODIUM -->
+      <div class="bg-slate-900/80 border border-slate-800 p-6 rounded-3xl backdrop-blur-md flex flex-col gap-4 shadow-xl">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="font-bold text-base text-white flex items-center gap-2">
+              <span>🏆</span> ТОП-3 Көшбасшылар Подиумы (Нақты Рейтинг)
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5">Диагностика тапсырған нақты қолданушылардың үздік нәтижесі</p>
+          </div>
+          <span class="text-[10px] font-mono px-2.5 py-1 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30 font-bold">LIVE LEADERBOARD</span>
+        </div>
+        <div id="topLeaderboardPodium" class="grid grid-cols-1 sm:grid-cols-3 gap-4"></div>
+      </div>
+
+      <!-- PERSONAL ERS PROGRESS SVG CHART -->
+      <div class="bg-slate-900/80 border border-slate-800 p-6 rounded-3xl backdrop-blur-md flex flex-col justify-between gap-4 shadow-xl">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 class="font-bold text-sm text-white" data-i18n="chart_title">📈 Сіздің жеке ERS өсу динамикаңыз</h3>
+            <p class="text-xs text-slate-400" data-i18n="chart_subtitle">Өзіңіз тапсырған WPM Диагностика нәтижелерінің нақты графигі</p>
+          </div>
+          <span class="text-xs font-mono text-cyber-teal">● Нақты нәтижелер</span>
+        </div>
+        <div class="w-full h-48 relative pt-4">
+          <svg id="progressSvgChart" class="w-full h-full overflow-visible" viewBox="0 0 700 180"></svg>
+        </div>
+      </div>
+
+      <!-- LIVE ACTIVITY AUDIT TABLE -->
+      <div class="bg-slate-900/80 border border-slate-800 p-6 rounded-3xl backdrop-blur-md flex flex-col gap-4 shadow-xl">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 class="font-bold text-base text-white flex items-center gap-2">
+              <span>⚡</span> <span data-i18n="audit_log_title">Нақты қолданушылар белсенділігі (Real-Time Activity)</span>
+            </h3>
+            <p class="text-xs text-slate-400" data-i18n="audit_log_desc">Бұл тізімде тек сайтқа шынайы кірген және жаттығу орындаған адамдар ғана көрсетіледі</p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <input type="text" id="auditSearchInput" oninput="analyticsManager.renderAuditTable()" placeholder="Есім бойынша іздеу..." class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-brand-500" />
+            <button onclick="analyticsManager.fetchFromSupabase()" class="px-3.5 py-1.5 rounded-xl bg-brand-600/20 hover:bg-brand-600/40 text-brand-300 border border-brand-500/30 text-xs font-bold transition">
+              🔄 Жаңарту
+            </button>
+            <button onclick="analyticsManager.exportAuditCsv()" class="px-3.5 py-1.5 rounded-xl bg-cyber-teal hover:bg-teal-400 text-slate-950 text-xs font-black shadow transition">
+              📥 CSV Жүктеу
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950/60">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-950 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-800">
+              <tr>
+                <th class="py-3.5 px-4">Қолданушы</th>
+                <th class="py-3.5 px-4">Әрекет / Модуль</th>
+                <th class="py-3.5 px-4">Уақыты & Құрылғы</th>
+                <th class="py-3.5 px-4">Деңгей & XP</th>
+                <th class="py-3.5 px-4">Түсіну %</th>
+                <th class="py-3.5 px-4 text-right">Нәтиже (WPM / ERS)</th>
+              </tr>
+            </thead>
+            <tbody id="auditTableBody" class="divide-y divide-slate-800/60"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- REGISTERED ACCOUNTS DIRECTORY -->
+      <div class="bg-slate-900/80 border border-slate-800 p-6 rounded-3xl backdrop-blur-md shadow-xl">
+        <h3 class="font-bold text-sm mb-4 text-white" data-i18n="registered_directory_title">👥 Бірегей қолданушылар тізімі (User Directory)</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5" id="registeredUsersGrid"></div>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between bg-slate-900/40 border border-slate-800 p-4 rounded-2xl gap-3">
+        <span class="text-xs text-slate-400">Деректер қоры: Supabase Cloud + Local Account Vault</span>
+        <div class="flex gap-2">
+          <button onclick="storageManager.exportData()" class="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold">JSON Сақтау</button>
+          <button onclick="storageManager.resetData()" class="px-3.5 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 border border-rose-500/30 text-xs font-bold">🗑️ Кэшті тазалау</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===================================================================== -->
+  <!-- MOBILE BOTTOM NAVIGATION BAR (iOS & ANDROID SAFE)                     -->
+  <!-- ===================================================================== -->
+  <nav class="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800 px-2 py-1.5 grid grid-cols-6 text-[10px] safe-area-bottom">
+    <button id="mob-rsvp" onclick="router.navigate('rsvp')" class="flex flex-col items-center gap-1 text-brand-400 font-bold p-1">
+      <i class="fa-solid fa-bolt text-sm"></i><span>RSVP</span>
+    </button>
+    <button id="mob-schulte" onclick="router.navigate('schulte')" class="flex flex-col items-center gap-1 text-slate-400 p-1">
+      <i class="fa-solid fa-table-cells text-sm"></i><span>Шульте</span>
+    </button>
+    <button id="mob-saccade" onclick="router.navigate('saccade')" class="flex flex-col items-center gap-1 text-slate-400 p-1">
+      <i class="fa-solid fa-eye text-sm"></i><span>Көру</span>
+    </button>
+    <button id="mob-pacer" onclick="router.navigate('pacer')" class="flex flex-col items-center gap-1 text-slate-400 p-1">
+      <i class="fa-solid fa-bars-staggered text-sm"></i><span>Пейсер</span>
+    </button>
+    <button id="mob-diagnostic" onclick="router.navigate('diagnostic')" class="flex flex-col items-center gap-1 text-slate-400 p-1">
+      <i class="fa-solid fa-gauge-high text-sm"></i><span>Тест</span>
+    </button>
+    <button id="mob-analytics" onclick="router.navigate('analytics')" class="flex flex-col items-center gap-1 text-slate-400 p-1">
+      <i class="fa-solid fa-chart-line text-sm"></i><span>Стат</span>
+    </button>
+  </nav>
+
+  <!-- ===================================================================== -->
+  <!-- ACCOUNT PROFILE MODAL                                                 -->
+  <!-- ===================================================================== -->
+  <div id="accountModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-3xl p-6 shadow-2xl flex flex-col gap-4">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 class="font-bold text-base text-white">Оқушының когнитивті профилі</h3>
+        <button onclick="modals.close('accountModal')" class="text-slate-400 hover:text-white text-lg">✕</button>
+      </div>
+
+      <div class="flex items-center gap-4 bg-slate-950 p-4 rounded-2xl border border-slate-800">
+        <div class="text-4xl" id="profileModalAvatar">👩‍💻</div>
+        <div class="overflow-hidden">
+          <h4 class="font-bold text-white text-base truncate" id="profileModalName">Оқушы</h4>
+          <p class="text-xs text-cyber-teal font-mono truncate" id="profileModalEmail">student@edu.kz</p>
+          <span class="inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-300 border border-brand-500/30 font-mono" id="profileModalRole">Rank: Junior Reader</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 text-xs">
+        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+          <span class="text-slate-400 block text-[10px] uppercase font-bold">Ағымдағы Деңгей</span>
+          <span class="text-base font-bold text-white font-mono" id="profileModalLevel">Level 1 (0 XP)</span>
+        </div>
+        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+          <span class="text-slate-400 block text-[10px] uppercase font-bold">Рекордтық WPM / ERS</span>
+          <span class="text-base font-bold text-cyber-teal font-mono" id="profileModalMaxWpm">0 WPM</span>
+        </div>
+      </div>
+
+      <button onclick="authManager.logout(); modals.close('accountModal');" class="w-full py-3 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 font-bold text-xs border border-rose-500/30 transition flex items-center justify-center gap-2">
+        <i class="fa-solid fa-right-from-bracket"></i> Аккаунттан шығу
+      </button>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- CUSTOM TEXT PASTE MODAL                                               -->
+  <!-- ===================================================================== -->
+  <div id="customTextModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-xl rounded-3xl p-6 shadow-2xl flex flex-col gap-4">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 class="font-bold text-base text-white" data-i18n="modal_custom_title">Өз мәтініңізді немесе дәрісті енгізу</h3>
+        <button onclick="modals.close('customTextModal')" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+      <textarea id="customTextInput" rows="8" class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-sm font-sans text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="Информатика конспектісін немесе мақаланы осында қойыңыз..."></textarea>
+      <div class="flex justify-end gap-2">
+        <button onclick="modals.close('customTextModal')" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:bg-slate-800" data-i18n="btn_cancel">Болдырмау</button>
+        <button onclick="rsvpEngine.applyCustomText()" class="px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold shadow-lg shadow-brand-500/25" data-i18n="btn_apply">Мәтінді жүктеу</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- NEURO-WARMUP VIDEO MODAL (videos/eyes.mp4, fingers.mp4, brain.mp4)    -->
+  <!-- ===================================================================== -->
+  <div id="neuroWarmupModal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-3xl p-5 sm:p-7 shadow-2xl flex flex-col gap-4 relative overflow-hidden">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2.5">
+          <span class="text-2xl">🧘‍♀️</span>
+          <div>
+            <h3 class="font-bold text-sm sm:text-base text-white">Нейро-қыздырыну & Көз гимнастикасы</h3>
+            <p class="text-[11px] text-slate-400">Оқу алдында көру фокусы мен ми жартышарларын синхрондау</p>
+          </div>
+        </div>
+        <button onclick="neuroWarmup.close()" class="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition text-lg">✕</button>
+      </div>
+
+      <div class="grid grid-cols-3 gap-2 bg-slate-950 p-1 rounded-2xl border border-slate-800 text-[11px] font-semibold">
+        <button id="tabWarmupEyes" onclick="neuroWarmup.selectVideo('eyes')" class="py-2 rounded-xl bg-brand-600 text-white shadow transition">
+          👁️ Көз гимнастикасы
+        </button>
+        <button id="tabWarmupFingers" onclick="neuroWarmup.selectVideo('fingers')" class="py-2 rounded-xl text-slate-400 hover:text-white transition">
+          🧠 Саусақ жаттығуы
+        </button>
+        <button id="tabWarmupBrain" onclick="neuroWarmup.selectVideo('brain')" class="py-2 rounded-xl text-slate-400 hover:text-white transition">
+          ⚡ Зейін фокусы
+        </button>
+      </div>
+
+      <div class="relative w-full aspect-video rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 shadow-inner flex items-center justify-center">
+        <video id="warmupVideoPlayer" class="w-full h-full object-contain" src="videos/eyes.mp4" controls playsinline webkit-playsinline preload="auto">
+          Сіздің браузеріңіз видеоны қолдамайды.
+        </video>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-800 text-xs text-slate-400">
+        <span id="warmupHintText">💡 Көз жаттығуы: Басыңызды қозғалтпай, экрандағы нүктені тек көзбен қадағалаңыз.</span>
+        <button onclick="neuroWarmup.close()" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs shadow-md transition ml-auto">
+          Жаттығуды аяқтау ✓
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- GOOGLE ACCOUNT PICKER MODAL (SUPABASE OAUTH + REALISTIC FALLBACK)     -->
+  <!-- ===================================================================== -->
+  <div id="googlePickerModal" class="fixed inset-0 z-[95] bg-slate-950/85 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2">
+          <i class="fa-brands fa-google text-lg text-white"></i>
+          <span class="font-bold text-sm text-white">Google арқылы кіру</span>
+        </div>
+        <button onclick="modals.close('googlePickerModal')" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+      <p class="text-xs text-slate-400">Google аккаунтыңызды енгізіңіз (сессия автоматты түрде сақталады):</p>
+      <form onsubmit="authManager.completeGooglePopup(event)" class="space-y-3">
+        <div>
+          <label class="block text-[11px] text-slate-400 mb-1">Аты-жөніңіз</label>
+          <input type="text" id="googleInputName" required placeholder="Аида Мақышева" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-brand-500" />
+        </div>
+        <div>
+          <label class="block text-[11px] text-slate-400 mb-1">Gmail поштаңыз</label>
+          <input type="email" id="googleInputEmail" required placeholder="username@gmail.com" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-brand-500" />
+        </div>
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-950 font-extrabold text-xs transition">
+          Google аккаунтпен жалғастыру
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Supabase JS SDK & Main Application Logic -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
+</body>
+</html>
