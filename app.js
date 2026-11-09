@@ -1250,7 +1250,12 @@ const analyticsManager = {
     this.renderAll();
   },
 
-  async fetchFromSupabase() {
+async fetchFromSupabase() {
+    await this.fetchFromSupabaseSilent();
+    showToast('Деректер жаңартылды!');
+  },
+
+  async fetchFromSupabaseSilent() {
     if (supabaseClient) {
       try {
         const { data } = await supabaseClient
@@ -1262,14 +1267,13 @@ const analyticsManager = {
         if (data && data.length) {
           localStorage.setItem(this.LOG_KEY, JSON.stringify(data));
 
-          // Бұлттағы жазбалардан барлық бірегей қолданушыларды жинау
           const localUsers = authManager.getUsers();
           data.forEach(row => {
             if (!row.user_email) return;
             const existing = localUsers.find(u => u.email.toLowerCase() === row.user_email.toLowerCase());
             if (!existing) {
               localUsers.push({
-                name: row.user_name || 'Оқушы',
+                name: row.user_name || 'Пайдаланушы',
                 email: row.user_email,
                 avatar: row.avatar || '👩‍💻',
                 level: row.level || 1,
@@ -1288,7 +1292,6 @@ const analyticsManager = {
       } catch (e) {}
     }
     this.renderAll();
-    showToast('Барлық құрылғылардағы деректер жаңартылды!');
   },
 
   renderAll() {
@@ -1528,3 +1531,9 @@ window.addEventListener('keydown', e => {
     }
   }
 });
+// Басқа адамдар кіргенде немесе нәтиже тапсырғанда экранды әр 5 секунд сайын автоматты жаңартып отыру
+setInterval(() => {
+  if (typeof analyticsManager !== 'undefined' && typeof analyticsManager.fetchFromSupabaseSilent === 'function') {
+    analyticsManager.fetchFromSupabaseSilent();
+  }
+}, 5000);
