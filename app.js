@@ -279,47 +279,57 @@ const authManager = {
     analyticsManager.recordRealActivity('Жүйеге кірді (Login)', foundUser.maxWpm || 0, foundUser.maxWpm || 0, 100);
   },
 
-  // GOOGLE АККАУНТПЕН КІРУ
-  async loginWithGoogle() {
-    if (supabaseClient) {
-      try {
-        const { error } = await supabaseClient.auth.signInWithOAuth({ provider: 'google' });
-        if (!error) return;
-      } catch (e) {}
-    }
-    modals.open('googlePickerModal');
-  },
-
-  completeGooglePopup(e) {
-    e.preventDefault();
-    const name = document.getElementById('googleInputName').value.trim();
-    const email = document.getElementById('googleInputEmail').value.trim().toLowerCase();
-    if (!name || !email) return;
-
-    const users = this.getUsers();
-    let user = users.find(u => u.email.toLowerCase() === email);
-    if (!user) {
-      user = {
-        name,
-        email,
-        password: 'google_oauth_protected',
-        avatar: '🚀',
-        xp: 100,
-        level: 1,
-        maxWpm: 0,
-        wordsRead: 0,
-        ersHistory: [],
-        authType: 'google',
-        createdAt: new Date().toISOString()
-      };
-      users.push(user);
-      this.saveUsers(users);
+  // GOOGLE АККАУНТПЕН КІРУ (GOOGLE IDENTITY SERVICES)
+  loginWithGoogle() {
+    if (!window.google) {
+      showToast('Google кызматы жүктөлүүдө, бир аз күтө туруңуз...', 'error');
+      return;
     }
 
-    modals.close('googlePickerModal');
-    this.setActiveUser(user, true);
-    showToast(`Google арқылы кірдіңіз: ${user.name}`);
-    analyticsManager.recordRealActivity('Google OAuth арқылы кірді', user.maxWpm || 0, 0, 100);
+    window.google.accounts.id.initialize({
+      client_id: '450536619746-vl5henj93uftjbrp0crei8v12d7uiapu.apps.googleusercontent.com',
+      callback: (response) => {
+        try {
+          const base64Url = response.credential.split('.')[1];
+          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+          const data = JSON.parse(decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')));
+
+          if (data && data.email) {
+            const email = data.email.toLowerCase();
+            const name = data.name || 'Google User';
+
+            const users = this.getUsers();
+            let user = users.find(u => u.email.toLowerCase() === email);
+
+            if (!user) {
+              user = {
+                name: name,
+                email: email,
+                password: 'google_oauth_protected',
+                avatar: '🚀',
+                xp: 100,
+                level: 1,
+                maxWpm: 0,
+                wordsRead: 0,
+                ersHistory: [],
+                authType: 'google',
+                createdAt: new Date().toISOString()
+              };
+              users.push(user);
+              this.saveUsers(users);
+            }
+
+            this.setActiveUser(user, true);
+            showToast(`Google аркылуу кирдиңиз: ${name}!`);
+            analyticsManager.recordRealActivity('Google Auth аркылуу кирди', user.maxWpm || 0, 0, 100);
+          }
+        } catch (err) {
+          showToast('Google аркылуу кирүүдө ката кетти', 'error');
+        }
+      }
+    });
+
+    window.google.accounts.id.prompt();
   },
 
   // ҚОНАҚ АККАУНТ (ГОСТЬ / DEMO)
