@@ -279,57 +279,64 @@ const authManager = {
     analyticsManager.recordRealActivity('Жүйеге кірді (Login)', foundUser.maxWpm || 0, foundUser.maxWpm || 0, 100);
   },
 
-  // GOOGLE АККАУНТПЕН КІРУ (GOOGLE IDENTITY SERVICES)
+  // GOOGLE АККАУНТПЕН КІРУ (POPUP / ТОЛЫҚ БЕТ)
   loginWithGoogle() {
     if (!window.google) {
-      showToast('Google кызматы жүктөлүүдө, бир аз күтө туруңуз...', 'error');
+      showToast('Google қызметі жүктелуде, сәл күтіңіз...', 'error');
       return;
     }
 
-    window.google.accounts.id.initialize({
+    const client = window.google.accounts.oauth2.initTokenClient({
       client_id: '450536619746-vl5henj93uftjbrp0crei8v12d7uiapu.apps.googleusercontent.com',
-      callback: (response) => {
-        try {
-          const base64Url = response.credential.split('.')[1];
-          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-          const data = JSON.parse(decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')));
+      scope: 'email profile openid',
+      prompt: 'select_account', // Әр басқан сайын басқа аккаунтты таңдауға немесе жаңасын қосуға мүмкіндік береді
+      callback: async (tokenResponse) => {
+        if (tokenResponse && tokenResponse.access_token) {
+          try {
+            // Google API арқылы таңдалған қолданушының профилін оқу
+            const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+              headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
+            });
+            const data = await res.json();
 
-          if (data && data.email) {
-            const email = data.email.toLowerCase();
-            const name = data.name || 'Google User';
+            if (data && data.email) {
+              const email = data.email.toLowerCase();
+              const name = data.name || 'Google User';
 
-            const users = this.getUsers();
-            let user = users.find(u => u.email.toLowerCase() === email);
+              const users = this.getUsers();
+              let user = users.find(u => u.email.toLowerCase() === email);
 
-            if (!user) {
-              user = {
-                name: name,
-                email: email,
-                password: 'google_oauth_protected',
-                avatar: '🚀',
-                xp: 100,
-                level: 1,
-                maxWpm: 0,
-                wordsRead: 0,
-                ersHistory: [],
-                authType: 'google',
-                createdAt: new Date().toISOString()
-              };
-              users.push(user);
-              this.saveUsers(users);
+              if (!user) {
+                user = {
+                  name: name,
+                  email: email,
+                  password: 'google_oauth_protected',
+                  avatar: '🚀',
+                  xp: 100,
+                  level: 1,
+                  maxWpm: 0,
+                  wordsRead: 0,
+                  ersHistory: [],
+                  authType: 'google',
+                  createdAt: new Date().toISOString()
+                };
+                users.push(user);
+                this.saveUsers(users);
+              }
+
+              this.setActiveUser(user, true);
+              showToast(`Google арқылы кірдіңіз: ${name}!`);
+              analyticsManager.recordRealActivity('Google Auth арқылы кірді', user.maxWpm || 0, 0, 100);
             }
-
-            this.setActiveUser(user, true);
-            showToast(`Google аркылуу кирдиңиз: ${name}!`);
-            analyticsManager.recordRealActivity('Google Auth аркылуу кирди', user.maxWpm || 0, 0, 100);
+          } catch (err) {
+            showToast('Google мәліметтерін алу кезінде қате орын алды', 'error');
           }
-        } catch (err) {
-          showToast('Google аркылуу кирүүдө ката кетти', 'error');
         }
       }
     });
 
-    window.google.accounts.id.prompt();
+    // Ресми Google терезесін ашу
+    client.requestAccessToken();
   },
 
   // ҚОНАҚ АККАУНТ (ГОСТЬ / DEMO)
