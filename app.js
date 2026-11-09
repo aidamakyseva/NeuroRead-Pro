@@ -4,8 +4,8 @@
 
 // 1. SUPABASE CONFIGURATION (Егер өз базаңыз болса, осы жерге URL мен KEY қоясыз, 
 // болмаса да жүйе LocalStorage арқылы 100% мінсіз жұмыс істей береді)
-const SUPABASE_URL = ''; 
-const SUPABASE_ANON_KEY = '';
+const SUPABASE_URL = 'https://arcxnalfwpmoxhzxkapw.supabase.co'; 
+const SUPABASE_ANON_KEY = 'sb_publishable_3OJq2prReE8ZiDyx5S0IDg_i9fI7mT6';
 let supabaseClient = null;
 
 if (SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase) {
